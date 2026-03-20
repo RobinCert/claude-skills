@@ -13,6 +13,7 @@ Verzameling van Claude Code skills voor gebruik door Robin Chin-A-Teh en DSC-col
 | `dsc-ca-baseline` | DSC CA baseline go-live workflow (WSR/HZN/RGV) | DSC-team only — zie opmerking |
 | `cp-intune-baseline` | CarePilot Intune baseline deployment naar klant-tenants (tandartspraktijken) | CarePilot-team only — zie opmerking |
 | `osdcloud-deployer` | OSDCloud USB deployment en Autopilot device registratie voor CarePilot klanten | CarePilot-team only — zie opmerking |
+| `pegasus-reporter` | Genereert professionele klantrapportages (.docx) vanuit de Pegasus Obsidian vault | Robin |
 
 > **dsc-ca-baseline** vereist specifieke lokale setup: scripts op `C:\Drop\DSC\Scripts\Template\`, klant-configs op `C:\Drop\DSC\Klanten\`. Niet bruikbaar zonder die structuur.
 
