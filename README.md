@@ -9,9 +9,14 @@ Verzameling van Claude Code skills voor gebruik door Robin Chin-A-Teh en DSC-col
 | `ms365-tenant-manager` | M365 tenant admin — CA policies, users, Exchange, Teams, security | Iedereen |
 | `senior-devops` | CI/CD, IaC (Bicep/Terraform), Azure, containerization, monitoring | Iedereen |
 | `liquid-glass` | Liquid Glass UI/UX effects (Apple WWDC 2025) | Frontend developers |
+| `obsidian-manager` | Beheert de Pegasus Obsidian vault (notes, hub-notes, frontmatter, reorganisatie) | Robin |
 | `dsc-ca-baseline` | DSC CA baseline go-live workflow (WSR/HZN/RGV) | DSC-team only — zie opmerking |
+| `cp-intune-baseline` | CarePilot Intune baseline deployment naar klant-tenants (tandartspraktijken) | CarePilot-team only — zie opmerking |
+| `osdcloud-deployer` | OSDCloud USB deployment en Autopilot device registratie voor CarePilot klanten | CarePilot-team only — zie opmerking |
 
 > **dsc-ca-baseline** vereist specifieke lokale setup: scripts op `C:\Drop\DSC\Scripts\Template\`, klant-configs op `C:\Drop\DSC\Klanten\`. Niet bruikbaar zonder die structuur.
+
+> **cp-intune-baseline** en **osdcloud-deployer** vereisen toegang tot de CarePilot Control Suite app en de bijbehorende scripts. Neem contact op met Robin voor onboarding.
 
 ---
 
