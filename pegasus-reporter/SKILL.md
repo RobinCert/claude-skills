@@ -21,7 +21,7 @@ werkzaamheid-notes uit de Pegasus Obsidian vault.
 ## Output
 
 Een `.docx` Word document met:
-- Voorpagina (klant, periode, datum, ModernStack branding)
+- Voorpagina (klant, periode, datum, branding)
 - Managementsamenvatting
 - Overzichtstabel van uitgevoerde werkzaamheden
 - Details per werkzaamheid (doel, aanpak, resultaat, vervolgstappen)
@@ -29,6 +29,35 @@ Een `.docx` Word document met:
 
 Opgeslagen in: `C:\Users\Home Mini\Documents\Pegasus\Output\`
 Bestandsnaam: `<KLANTCODE>-Activiteitenrapportage-<PERIODE>.docx`
+
+---
+
+## Templates — gebruik altijd de klant-specifieke template
+
+### DSC — gebruik de officiële DSC Word template
+
+**Template:** `C:\Users\Home Mini\Documents\Pegasus\Templates\DSC\Word\High_en_Low_LevelDesign.docx`
+
+DSC branding:
+- Font: **Poppins** (koppen), **AktivGroteskW06-Light** (body)
+- Kleur: **#06BBC1** (DSC teal)
+- Paragraafstijlen: `Kop 1 zonder nummering DSC`, `Kop 2 zonder nummering DSC`, `Kop 3 zonder nummering DSC`
+- Versietabel verplicht: `Versie | Datum | Auteur | Wijzigingen`
+
+Werkwijze — template als basis gebruiken (unpack → edit XML → repack):
+```bash
+# Beschikbaar via docx skill scripts
+python scripts/office/unpack.py "C:\Users\Home Mini\Documents\Pegasus\Templates\DSC\Word\High_en_Low_LevelDesign.docx" C:\Tmp\dsc-rapport-unpacked\
+# ... XML bewerken ...
+python scripts/office/pack.py C:\Tmp\dsc-rapport-unpacked\ "C:\Users\Home Mini\Documents\Pegasus\Output\WSR-Activiteitenrapportage-2026-03.docx" --original "C:\Users\Home Mini\Documents\Pegasus\Templates\DSC\Word\High_en_Low_LevelDesign.docx"
+```
+
+### CarePilot — nog geen officiële template
+
+Er zijn nog geen CarePilot-templates in de vault. Gebruik tot die tijd de `docx` npm library met ModernStack branding:
+- Font: **Calibri**
+- Kleur: **#1F4E79** (ModernStack blauw)
+- Vraag Robin of er CP-templates beschikbaar zijn.
 
 ---
 

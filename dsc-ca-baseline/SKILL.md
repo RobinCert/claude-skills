@@ -88,6 +88,11 @@ Workshop-policies en CAD018 worden automatisch overgeslagen.
 Script: Build-GolivePresentation.ps1
 Output: <outputDir>\<CODE>-CA-Golive-Plan.pptx -- opent automatisch in PowerPoint.
 
+Gebruik altijd de officiële DSC PowerPoint template als basis:
+  Template: C:\Users\Home Mini\Documents\Pegasus\Templates\DSC\PowerPoint\Workshop_Technisch.pptx
+  DSC branding: font Poppins, kleur #06BBC1
+  Via pptx skill: unpack template -> slides aanpassen -> repack
+
 ---
 
 ## Veelvoorkomende situaties
