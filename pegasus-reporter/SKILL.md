@@ -52,12 +52,22 @@ python scripts/office/unpack.py "C:\Users\Home Mini\Documents\Pegasus\Templates\
 python scripts/office/pack.py C:\Tmp\dsc-rapport-unpacked\ "C:\Users\Home Mini\Documents\Pegasus\Output\WSR-Activiteitenrapportage-2026-03.docx" --original "C:\Users\Home Mini\Documents\Pegasus\Templates\DSC\Word\High_en_Low_LevelDesign.docx"
 ```
 
-### CarePilot — nog geen officiële template
+### CarePilot — gebruik de officiële CarePilot Word template
 
-Er zijn nog geen CarePilot-templates in de vault. Gebruik tot die tijd de `docx` npm library met ModernStack branding:
-- Font: **Calibri**
-- Kleur: **#1F4E79** (ModernStack blauw)
-- Vraag Robin of er CP-templates beschikbaar zijn.
+**Template:** `C:\Users\Home Mini\Documents\Pegasus\Templates\CarePilot\Word\CarePilot - Template.docx`
+
+CarePilot branding:
+- Font: **Arial**
+- Primaire kleur: **#2F183B** (donker paars)
+- Accentkleur: **#EC685F** (coral)
+- Paragraafstijlen: `Kop1`, `Kop2`, `Kop3`, `Opsomming`, `Nummering 1`, `Nummering 2`
+
+Werkwijze — template als basis (unpack → edit XML → repack):
+```bash
+python scripts/office/unpack.py "C:\Users\Home Mini\Documents\Pegasus\Templates\CarePilot\Word\CarePilot - Template.docx" C:\Tmp\cp-rapport-unpacked\
+# ... XML bewerken ...
+python scripts/office/pack.py C:\Tmp\cp-rapport-unpacked\ "C:\Users\Home Mini\Documents\Pegasus\Output\CP-Activiteitenrapportage-2026-03.docx" --original "C:\Users\Home Mini\Documents\Pegasus\Templates\CarePilot\Word\CarePilot - Template.docx"
+```
 
 ---
 
