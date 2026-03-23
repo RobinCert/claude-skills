@@ -11,11 +11,12 @@ Verzameling van Claude Code skills voor gebruik door Robin Chin-A-Teh en DSC-col
 | `liquid-glass` | Liquid Glass UI/UX effects (Apple WWDC 2025) | Frontend developers |
 | `obsidian-manager` | Beheert de Pegasus Obsidian vault (notes, hub-notes, frontmatter, reorganisatie) | Robin |
 | `dsc-ca-baseline` | DSC CA baseline go-live workflow (WSR/HZN/RGV) | DSC-team only — zie opmerking |
+| `dsc-ca-migratie` | CA overlap-analyse en exclusion carryover — bestaande tenant vs DSC baseline | DSC-team only — zie opmerking |
 | `cp-intune-baseline` | CarePilot Intune baseline deployment naar klant-tenants (tandartspraktijken) | CarePilot-team only — zie opmerking |
 | `osdcloud-deployer` | OSDCloud USB deployment en Autopilot device registratie voor CarePilot klanten | CarePilot-team only — zie opmerking |
 | `pegasus-reporter` | Genereert professionele klantrapportages (.docx) vanuit de Pegasus Obsidian vault | Robin |
 
-> **dsc-ca-baseline** vereist specifieke lokale setup: scripts op `C:\Drop\DSC\Scripts\Template\`, klant-configs op `C:\Drop\DSC\Klanten\`. Niet bruikbaar zonder die structuur.
+> **dsc-ca-baseline** en **dsc-ca-migratie** vereisen specifieke lokale setup: scripts op `C:\Drop\DSC\Scripts\Template\`, klant-configs op `C:\Drop\DSC\Klanten\`. Niet bruikbaar zonder die structuur. Scripts staan in [RobinCert/DSC](https://github.com/RobinCert/DSC) onder `Scripts/Entra/Onboarding/CA/`.
 
 > **cp-intune-baseline** en **osdcloud-deployer** vereisen toegang tot de CarePilot Control Suite app en de bijbehorende scripts. Neem contact op met Robin voor onboarding.
 

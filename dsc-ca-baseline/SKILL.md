@@ -40,12 +40,17 @@ Lees altijd eerst de klant-config.json. Let op golive.fase:
 
 ---
 
-## PIM -- verplicht voor schrijfacties (Phase 3 en 4)
+## Auth -- delegated browser-login (verplicht voor alle fases)
 
-Waarschuw altijd VOOR Phase 3 of 4:
-"PIM activeren -- activeer Conditional Access Administrator of Global Administrator in de klant-tenant. Zeg het als je klaar bent."
+DSC-klanten: app registration (client_credentials) is NOOIT mogelijk. Altijd delegated auth:
+- Phase 1 en 2: read-only scopes (Policy.Read.All, Directory.Read.All)
+- Phase 3 en 4: write scopes (Policy.ReadWrite.ConditionalAccess erbij)
 
-Wacht op bevestiging. Phase 1 en 2 zijn read-only, geen PIM nodig.
+Het script roept Connect-MgGraph aan -- Robin klikt Accept in de browser-popup.
+Waarschuw VOOR Phase 3 of 4: "Er verschijnt een browser-popup -- klik Accept."
+
+PIM: scripts vereisen Conditional Access Administrator of Global Administrator.
+Wacht op PIM-bevestiging VOOR je Phase 3 of 4 start.
 
 ---
 
@@ -57,7 +62,7 @@ Voorbeeld:
   powershell.exe -NoExit -File "C:\Drop\DSC\Scripts\Template\Phase1-Audit.ps1" -ConfigPath "C:\Drop\DSC\Klanten\WSR - Woonstad Rotterdam\klant-config.json"
 
 Altijd -NoExit. Output lezen via read_process_output.
-Bij Phase 3 en 4: altijd eerst -DryRun, dan pas live na goedkeuring Robin.
+Bij Phase 3 en 4: altijd eerst -DryRun $true, dan pas -DryRun $false na goedkeuring Robin + browser Accept.
 
 ---
 
@@ -74,10 +79,13 @@ Daarna reviewen: DSC policies herkend? CAD018 al enabled (normaal)? CAD001/004/0
 Script: Phase2-CheckGroups.ps1
 Let op: SG-UG-PIM-Workplace moet leden hebben. CAL001 named locations zijn staging-specifiek -- blocker melden.
 
-### Phase 3 -- BTG + Guest exclusions (schrijft -- PIM vereist)
-Vereiste: btgAccounts.upns gevuld in config. Zo niet: vraag Robin om de UPNs.
-Volgorde: dry-run tonen -> goedkeuring Robin -> live
-Verificatie ingebouwd: controleer "excludeUsers na PATCH" in output.
+### Phase 3 -- BTG exclusions (schrijft -- PIM vereist)
+Vereiste: discovered.btgObjectIds gevuld in config (door Phase1-Audit.ps1).
+Zo niet: vraag Robin om de BTG account UPNs en zoek object IDs op via Get-MgUser.
+Targeted: ALLE DSC baseline policies (^CA[DLUP]\d{3}) minus workshopPolicies.
+Bestaande exclusions worden BEWAARD (merge, niet replace).
+Volgorde: dry-run tonen -> goedkeuring Robin -> live (browser-popup)
+Verificatie ingebouwd: controleer "PATCH OK -- exclusions na update" in output.
 
 ### Phase 4 -- Report-only (schrijft -- PIM vereist)
 Script: Phase4-ReportOnly.ps1
