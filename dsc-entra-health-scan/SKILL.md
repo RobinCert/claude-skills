@@ -1,19 +1,25 @@
 ---
 name: dsc-entra-health-scan
 description: >
-  Haalt automatisch Entra ID statistieken op uit een DSC klanttenant en voegt
-  een Entra Omgevingsoverzicht (Hoofdstuk 4) toe aan het Health Scan Report.
+  Maakt en/of updatet een DSC Health Scan Report voor een klanttenant.
+  Kan een volledig nieuw rapport aanmaken vanuit het template (H1-H3 invullen),
+  en/of Entra ID statistieken ophalen en toevoegen als Hoofdstuk 4.
   Geen PowerShell nodig — werkt volledig via Python + één browser-authenticatie.
   Trigger bij: "entra stats health scan", "omgevingsoverzicht toevoegen", "H4 health scan",
-  "entra data ophalen voor [klant]", "entra-health-scan", of wanneer iemand Entra-statistieken
+  "entra data ophalen voor [klant]", "health scan aanmaken voor [klant]",
+  "nieuw rapport [klant]", "entra-health-scan", of wanneer iemand Entra-statistieken
   wil toevoegen aan een Health Scan rapport voor een DSC-klant.
   Niet triggeren bij: CarePilot/Vertimart klanten, CP-nummers, of werkzaamheden buiten DSC.
 ---
 
 # DSC Entra Health Scan Skill
 
-Automatiseert het ophalen van Entra statistieken en het bijwerken van Health Scan Reports.
+Automatiseert het aanmaken en bijwerken van Health Scan Reports voor DSC-klanten.
 Geen PowerShell. Geen handmatig kopiëren. Één commando, één browser-tap.
+
+**Twee modi:**
+- **Nieuw rapport** — Maakt H1-H3 basisrapport vanuit template → voegt daarna H4 toe
+- **H4 toevoegen** — Voegt Entra-statistieken toe aan bestaand rapport
 
 ---
 
@@ -31,6 +37,42 @@ Runbook:  Obsidian → DSC/Runbooks/Entra-Stats-Health-Scan.md
 ---
 
 ## Werkwijze
+
+### Stap 0 — Bepaal de modus
+
+Check of er al een Health Scan docx bestaat voor de klant:
+
+```bash
+ls "[KlantDir]\Health Scan\" 2>/dev/null | grep -i "health scan"
+```
+
+- **Geen bestand gevonden** → Modus A: nieuw rapport aanmaken (stap 0A), daarna H4 toevoegen
+- **Bestand gevonden** → Ga direct naar stap 1 (PIM activeren) en dan stap 4 (H4 toevoegen)
+
+### Stap 0A — Nieuw basisrapport aanmaken (alleen bij geen bestaand document)
+
+Vraag de gebruiker (of pak uit eerdere context):
+- Klantadres (straat + huisnummer)
+- Postcode + stad
+- Contactpersoon 1 t/m 3 (naam + rol, bijv. "Jan Jansen (IT)")
+
+Run het init-script:
+
+```bash
+python "C:\Drop\DSC\Scripts\HealthScan\init_health_scan.py" \
+  -c "[KlantDir]\klant-config.json" \
+  --adres "[KLANT_ADRES]" \
+  --postcode-stad "[KLANT_POSTCODE_STAD]" \
+  --contact-1 "[NAAM (ROL)]" \
+  --contact-2 "[NAAM (ROL)]" \
+  --contact-3 "[NAAM (ROL)]"
+```
+
+Als de gebruiker geen adres/contacten geeft: run zonder die args — het script laat de placeholders staan en meldt welke nog ingevuld moeten worden.
+
+Meld de output (nieuw bestand pad) aan de gebruiker.
+
+---
 
 ### Stap 1 — PIM activeren (Robin/collega doet dit zelf)
 
@@ -78,7 +120,7 @@ Wacht tot het script klaar is (laatste regel = pad naar JSON-output).
 
 ### Stap 5 — Health Scan document bijwerken
 
-Zoek het meest recente Health Scan docx:
+Zoek het meest recente Health Scan docx (ook nieuw aangemaakte):
 ```bash
 ls "[KlantDir]\Health Scan\" | grep -i "health scan" | sort | tail -1
 ```
@@ -124,6 +166,7 @@ Meld aan de gebruiker:
 | `IndexError` in python-docx | Document mist sectPr | Al gefixed in Add-EntraHoofdstuk.py — update script indien nog fout |
 | Device code verlopen (>15 min) | Te lang gewacht | Script opnieuw starten |
 | `klant-config.json` niet gevonden | Verkeerd pad | Controleer pad, of maak config aan via New-KlantConfig.ps1 |
+| Template niet gevonden | create_template.py nog niet gedraaid | `python "C:\Drop\DSC\Scripts\HealthScan\create_template.py"` |
 
 ---
 
@@ -133,8 +176,10 @@ Meld aan de gebruiker:
 - Scopes: User.Read.All, AuditLog.Read.All, Group.Read.All, Device.Read.All, Directory.Read.All, Policy.Read.All, RoleManagement.Read.Directory
 - Lege groepen: `/groups/{id}/members/$count` per groep (~1 req/groep, traag bij 1000+)
 - JSON encoding: UTF-8 zonder BOM — python leest met `encoding='utf-8'`
-- Document versie-bump: automatisch (v0.4 → v0.5)
+- Document versie-bump: automatisch (bijv. v0.1 → v0.2 of v0.4 → v0.5)
 - sectPr fix: aanwezig in Add-EntraHoofdstuk.py, regel direct na `Document(dest)`
+- Template: `C:\Drop\DSC\Scripts\HealthScan\template-health-scan.docx` (gegenereerd via create_template.py)
+- Placeholders in template: `[KLANT_NAAM]`, `[KLANT_CODE]`, `[KLANT_ADRES]`, `[KLANT_POSTCODE_STAD]`, `[KLANT_CONTACT_1/2/3]`, `[DATUM]`
 
 ---
 
@@ -143,8 +188,14 @@ Meld aan de gebruiker:
 **"Entra stats voor RGV toevoegen aan health scan"**
 → PIM-instructie geven → klant-config.json lezen → stats ophalen → document bijwerken → output melden
 
+**"Nieuw health scan rapport aanmaken voor Gemeente Huizen"**
+→ Vragen om adres + contacten → init_health_scan.py draaien → PIM activeren → stats ophalen → H4 toevoegen
+
 **"Doe hetzelfde voor Gemeente Huizen"**
 → HZN klantmap gebruiken → zelfde flow
 
 **"Kan je chapter 4 opnieuw genereren met de bestaande JSON?"**
 → Stap 4 overslaan, direct naar stap 5 met de bestaande JSON
+
+**"Maak een rapport aan maar stats komen later"**
+→ Alleen stap 0A uitvoeren (init_health_scan.py), stappen 1-6 overslaan
