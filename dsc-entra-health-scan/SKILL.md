@@ -2,24 +2,19 @@
 name: dsc-entra-health-scan
 description: >
   Maakt en/of updatet een DSC Health Scan Report voor een klanttenant.
-  Kan een volledig nieuw rapport aanmaken vanuit het template (H1-H3 invullen),
-  en/of Entra ID statistieken ophalen en toevoegen als Hoofdstuk 4.
-  Geen PowerShell nodig — werkt volledig via Python + één browser-authenticatie.
+  Regelt setup, Entra-statistieken ophalen en document aanmaken/bijwerken volledig autonoom.
+  Geen PowerShell nodig. Één browser-tap voor authenticatie.
   Trigger bij: "entra stats health scan", "omgevingsoverzicht toevoegen", "H4 health scan",
   "entra data ophalen voor [klant]", "health scan aanmaken voor [klant]",
-  "nieuw rapport [klant]", "entra-health-scan", of wanneer iemand Entra-statistieken
-  wil toevoegen aan een Health Scan rapport voor een DSC-klant.
+  "nieuw rapport [klant]", "entra-health-scan", of wanneer iemand een Health Scan Report
+  wil aanmaken of bijwerken voor een DSC-klant.
   Niet triggeren bij: CarePilot/Vertimart klanten, CP-nummers, of werkzaamheden buiten DSC.
 ---
 
 # DSC Entra Health Scan Skill
 
-Automatiseert het aanmaken en bijwerken van Health Scan Reports voor DSC-klanten.
-Geen PowerShell. Geen handmatig kopiëren. Één commando, één browser-tap.
-
-**Twee modi:**
-- **Nieuw rapport** — Maakt H1-H3 basisrapport vanuit template → voegt daarna H4 toe
-- **H4 toevoegen** — Voegt Entra-statistieken toe aan bestaand rapport
+Volledig geautomatiseerde workflow voor DSC Health Scan Reports.
+Regelt setup, authenticatie, statistieken en document — van nul tot rapport.
 
 ---
 
@@ -27,224 +22,239 @@ Geen PowerShell. Geen handmatig kopiëren. Één commando, één browser-tap.
 
 | Klant | Code | Tenant ID | Klantmap |
 |---|---|---|---|
-| Woonstad Rotterdam | WSR | f4cd4ee9-43a6-4256-a5e0-016c044746c8 | C:\Drop\DSC\Klanten\WSR - Woonstad Rotterdam |
-| Gemeente Huizen | HZN | bc49eac0-d8da-4ed9-b328-91c793d8b02e | C:\Drop\DSC\Klanten\HZN - Gemeente Huizen |
-| Regio Gooi en Vechtstreek | RGV | 3d4f9081-0beb-452f-a8cf-7203e3681edc | C:\Drop\DSC\Klanten\RGV - Regio Gooi en Vechtstreek |
-
-Scripts: `[DSC_REPO]\Scripts\HealthScan\` (zie Setup hieronder)
-Runbook:  Obsidian → DSC/Runbooks/Entra-Stats-Health-Scan.md
-
----
-
-## Setup (eenmalig per machine)
-
-### 1 — DSC repo clonen
-
-Clone `RobinCert/DSC` naar een lokale map. Aanbevolen pad (zodat klantmappen ook kloppen):
-
-```bash
-gh repo clone RobinCert/DSC "C:\Drop\DSC\Scripts"
-```
-
-> Gebruik je een ander pad? Pas dan de scriptpaden in de commando's hieronder aan.
-
-### 2 — Python dependencies installeren
-
-```bash
-pip install msal requests python-docx
-```
-
-### 3 — claude-skills repo configureren
-
-Clone `RobinCert/claude-skills` en voeg het pad toe aan je globale `CLAUDE.md`
-(`C:\Users\[Naam]\.claude\CLAUDE.md` of de CLAUDE.md in je werkmap):
-
-```bash
-gh repo clone RobinCert/claude-skills "C:\Users\[Naam]\claude-skills"
-```
-
-Voeg toe aan CLAUDE.md:
-```
-Skills directory: C:\Users\[Naam]\claude-skills\
-```
-
-### 4 — Klantmap inrichten
-
-Elke klant heeft een map nodig met `klant-config.json`. Minimale inhoud:
-
-```json
-{
-  "klant": {
-    "naam": "Naam van de klant",
-    "code": "ABC",
-    "tenantId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    "outputDir": "C:\\Drop\\DSC\\Klanten\\ABC - Naam"
-  }
-}
-```
+| Woonstad Rotterdam | WSR | f4cd4ee9-43a6-4256-a5e0-016c044746c8 | `C:\Drop\DSC\Klanten\WSR - Woonstad Rotterdam` |
+| Gemeente Huizen | HZN | bc49eac0-d8da-4ed9-b328-91c793d8b02e | `C:\Drop\DSC\Klanten\HZN - Gemeente Huizen` |
+| Regio Gooi en Vechtstreek | RGV | 3d4f9081-0beb-452f-a8cf-7203e3681edc | `C:\Drop\DSC\Klanten\RGV - Regio Gooi en Vechtstreek` |
 
 ---
 
 ## Werkwijze
 
-### Stap 0 — Bepaal de modus
+### Stap 1 — Setup controleren (altijd als eerste)
 
-Check of er al een Health Scan docx bestaat voor de klant:
+Controleer of de scripts aanwezig zijn:
 
 ```bash
-ls "[KlantDir]\Health Scan\" 2>/dev/null | grep -i "health scan"
+python -c "from pathlib import Path; p = Path('C:/Drop/DSC/Scripts/HealthScan/get_entra_stats.py'); print('OK' if p.exists() else 'MISSING')"
 ```
 
-- **Geen bestand gevonden** → Modus A: nieuw rapport aanmaken (stap 0A), daarna H4 toevoegen
-- **Bestand gevonden** → Ga direct naar stap 1 (PIM activeren) en dan stap 4 (H4 toevoegen)
+**Als MISSING:**
 
-### Stap 0A — Nieuw basisrapport aanmaken (alleen bij geen bestaand document)
+```bash
+gh repo clone RobinCert/DSC "C:\Drop\DSC\Scripts" 2>&1
+```
 
-Vraag de gebruiker (of pak uit eerdere context):
-- Klantadres (straat + huisnummer)
-- Postcode + stad
-- Contactpersoon 1 t/m 3 (naam + rol, bijv. "Jan Jansen (IT)")
+Controleer daarna of de Python dependencies aanwezig zijn:
 
-Run het init-script:
+```bash
+pip show msal requests python-docx 2>/dev/null | grep "^Name" | wc -l
+```
+
+Als minder dan 3:
+
+```bash
+pip install msal requests python-docx -q
+```
+
+**Als OK:** ga direct door naar stap 2.
+
+---
+
+### Stap 2 — Klant bepalen
+
+Als de gebruiker geen klant of pad heeft opgegeven, vraag:
+
+> Welke klant? (RGV / WSR / HZN — of geef het volledige pad naar de klantmap)
+
+Bepaal `[KlantDir]` op basis van de bekende klanten tabel of het opgegeven pad.
+
+Controleer of `klant-config.json` aanwezig is:
+
+```bash
+python -c "from pathlib import Path; p = Path('[KlantDir]/klant-config.json'); print('OK' if p.exists() else 'MISSING')"
+```
+
+**Als MISSING:** meld aan de gebruiker:
+
+> `klant-config.json` niet gevonden in `[KlantDir]`.
+> Maak het bestand aan met minimaal:
+> ```json
+> {
+>   "klant": {
+>     "naam": "[KlantNaam]",
+>     "code": "[KlantCode]",
+>     "tenantId": "[TenantId]",
+>     "outputDir": "[KlantDir]"
+>   }
+> }
+> ```
+
+Wacht tot de gebruiker bevestigt dat het bestand aanwezig is.
+
+Lees de config en extraheer: `klant.naam`, `klant.code`, `klant.tenantId`, `klant.outputDir`.
+
+---
+
+### Stap 3 — Modus bepalen
+
+Controleer of er al een Health Scan rapport bestaat:
+
+```bash
+python -c "
+import glob, os
+files = glob.glob('[KlantDir]/Health Scan/*Health Scan*.docx')
+print(sorted(files)[-1] if files else 'GEEN')
+"
+```
+
+- **GEEN** → Modus A: nieuw rapport aanmaken (stap 4), daarna statistieken toevoegen (stap 5-7)
+- **Bestand gevonden** → Modus B: sla stap 4 over, ga direct naar stap 5
+
+---
+
+### Stap 4 — Nieuw basisrapport aanmaken (alleen Modus A)
+
+Vraag de gebruiker:
+
+> Heb je het klantadres en de contactpersonen bij de hand?
+> - Adres (straat + huisnummer)
+> - Postcode + stad
+> - Contactpersoon 1 t/m 3 (naam + rol, bijv. "Jan Jansen (IT)")
+>
+> Typ `skip` om placeholders te laten staan.
+
+Als de gebruiker gegevens geeft, gebruik ze in het commando. Als `skip`, draai zonder extra args:
 
 ```bash
 python "C:\Drop\DSC\Scripts\HealthScan\init_health_scan.py" \
   -c "[KlantDir]\klant-config.json" \
-  --adres "[KLANT_ADRES]" \
-  --postcode-stad "[KLANT_POSTCODE_STAD]" \
+  --adres "[ADRES]" \
+  --postcode-stad "[POSTCODE STAD]" \
   --contact-1 "[NAAM (ROL)]" \
   --contact-2 "[NAAM (ROL)]" \
   --contact-3 "[NAAM (ROL)]"
 ```
 
-Als de gebruiker geen adres/contacten geeft: run zonder die args — het script laat de placeholders staan en meldt welke nog ingevuld moeten worden.
+Meld het aangemaakte bestand aan de gebruiker. Als er nog placeholders zijn, benoem ze:
 
-Meld de output (nieuw bestand pad) aan de gebruiker.
+> Rapport aangemaakt: `[pad]`
+> Nog handmatig in te vullen: `[KLANT_CONTACT_2]`, `[KLANT_ADRES]` (open in Word)
 
 ---
 
-### Stap 1 — PIM activeren (Robin/collega doet dit zelf)
+### Stap 5 — PIM activeren
 
 Zeg tegen de gebruiker:
 
 > Activeer PIM **Global Reader** op de [KlantNaam] tenant vóór je verdergaat.
 > Ga naar: https://entra.microsoft.com/#view/Microsoft_Azure_PIMCommon/ActivationMenuBlade
 > Justificatie: *Health Scan — Entra omgevingsoverzicht*
-> Bevestig als PIM actief is.
+>
+> Bevestig hier als PIM actief is.
 
-Wacht op bevestiging voordat je verdergaat.
+Wacht op bevestiging.
 
-### Stap 2 — Klantmap bepalen
+---
 
-Als de gebruiker geen pad geeft, vraag dan:
-> Welke klant? (RGV / WSR / HZN of volledig pad naar de klantmap)
-
-Lees `klant-config.json` uit de klantmap en extraheer:
-- `klant.naam`, `klant.code`, `klant.tenantId`, `klant.outputDir`
-
-### Stap 3 — Python dependencies controleren
-
-```bash
-pip show msal requests python-docx 2>/dev/null | grep "^Name" | wc -l
-```
-
-Als minder dan 3 packages aanwezig:
-```bash
-pip install msal requests python-docx -q
-```
-
-### Stap 4 — Entra stats ophalen
+### Stap 6 — Entra statistieken ophalen
 
 ```bash
 python "C:\Drop\DSC\Scripts\HealthScan\get_entra_stats.py" \
   -c "[KlantDir]\klant-config.json"
 ```
 
-Het script print een device code URL + code. Zeg tegen de gebruiker:
+Het script toont een device code en URL. Zeg tegen de gebruiker:
 
-> Open de URL die verschijnt, log in met je DSC-beheerdersaccount voor [KlantNaam],
+> Open de URL die verschijnt, log in met je **DSC-beheerdersaccount** voor [KlantNaam],
 > en voer de code in. Dit is de enige browser-interactie die nodig is.
 
-Wacht tot het script klaar is (laatste regel = pad naar JSON-output).
+Wacht tot het script klaar is. De laatste regel van de output is het pad naar de JSON.
 
-### Stap 5 — Health Scan document bijwerken
+---
 
-Zoek het meest recente Health Scan docx (ook nieuw aangemaakte):
+### Stap 7 — Hoofdstuk 4 toevoegen aan rapport
+
+Zoek het meest recente rapport:
+
 ```bash
-ls "[KlantDir]\Health Scan\" | grep -i "health scan" | sort | tail -1
+python -c "
+import glob
+files = glob.glob('[KlantDir]/Health Scan/*Health Scan*.docx')
+print(sorted(files)[-1] if files else 'GEEN')
+"
 ```
 
-Run de document-updater:
+Voeg H4 toe:
+
 ```bash
 python "C:\Drop\DSC\Scripts\HealthScan\Add-EntraHoofdstuk.py" \
   -i "[gevonden docx pad]" \
   -j "[KlantDir]\Health Scan\[KlantCode]-EntraStats.json"
 ```
 
-### Stap 6 — Afronden
+---
 
-Meld aan de gebruiker:
-- Het pad van het bijgewerkte document (nieuw versienummer)
-- Kort overzicht van de key stats (gebruikers, groepen, devices)
-- Of er opvallende bevindingen zijn (veel stale users, lege groepen, GA's > 4, open gastbeleid)
+### Stap 8 — Afronden
+
+Lees de JSON en meld aan de gebruiker:
+
+- Pad van het bijgewerkte document
+- Key stats: totaal gebruikers / enabled / disabled / guests / groepen / devices
+- Opvallende bevindingen (zie tabel hieronder)
 
 ---
 
-## Opvallende bevindingen — herken en benoem deze
+## Opvallende bevindingen
 
 | Bevinding | Drempelwaarde | Wat te zeggen |
 |---|---|---|
 | Veel stale users | >20% van enabled | "X% van de actieve accounts heeft zich >90 dagen niet ingelogd — cleanup aanbevolen" |
-| Enabled zonder licentie | >10% van enabled | "X actieve accounts hebben geen licentie — controleer service accounts" |
+| Enabled zonder licentie | >10% van enabled | "X actieve accounts zonder licentie — mogelijk service accounts, controleer" |
 | Lege groepen | >25% van totaal | "X% van de groepen is leeg — opschoning aanbevolen" |
 | Inactieve devices | >30% van totaal | "X% van de devices is >90 dagen inactief" |
 | Global Admins | >4 | "X Global Admins — aanbevolen max is 2-4 (zie H4.5)" |
-| Open gastbeleid | AllowInvitesFrom bevat "AllMembers" of "everyone" | "Reguliere leden mogen gasten uitnodigen — overweeg beperking" |
+| Open gastbeleid | AllowInvitesFrom = `adminsGuestInvitersAndAllMembers` of `everyone` | "Reguliere gebruikers mogen gasten uitnodigen — overweeg beperking tot admins" |
 | CA report-only | >0 | "X CA policies staan in report-only — evalueer naar enforce" |
 
 ---
 
 ## Foutafhandeling
 
-| Fout | Oorzaak | Oplossing |
+| Fout | Oorzaak | Wat te doen |
 |---|---|---|
-| `AADSTS50076` / MFA vereist | PIM niet actief of verkeerde tenant | Verifieer PIM, gebruik juiste DSC-account |
-| `Insufficient privileges` | Global Reader niet actief of scope ontbreekt | Heractiveer PIM, wacht 2 min en retry |
-| `ModuleNotFoundError: msal` | Packages niet geïnstalleerd | `pip install msal requests python-docx` |
-| JSON `null`-waarden in gebruikers | `signInActivity` niet opgehaald | Check `AuditLog.Read.All` in de consent — of tenant blokkeert sign-in logs |
-| `IndexError` in python-docx | Document mist sectPr | Al gefixed in Add-EntraHoofdstuk.py — update script indien nog fout |
+| `AADSTS50076` / MFA required | PIM niet actief of verkeerde tenant | Verifieer PIM, gebruik juiste DSC-account |
+| `Insufficient privileges` | Global Reader scope ontbreekt | Heractiveer PIM, wacht 2 min, retry |
+| `ModuleNotFoundError: msal` | pip install niet gedaan | `pip install msal requests python-docx` |
+| JSON `null`-waarden in gebruikers | `signInActivity` niet opgehaald | Tenant blokkeert sign-in logs — check `AuditLog.Read.All` consent |
+| `IndexError` in python-docx | Document mist sectPr element | Al gefixed in Add-EntraHoofdstuk.py — update script als fout blijft |
 | Device code verlopen (>15 min) | Te lang gewacht | Script opnieuw starten |
-| `klant-config.json` niet gevonden | Verkeerd pad | Controleer pad, of maak config aan via New-KlantConfig.ps1 |
-| Template niet gevonden | create_template.py nog niet gedraaid | `python "C:\Drop\DSC\Scripts\HealthScan\create_template.py"` |
+| `klant-config.json` niet gevonden | Verkeerd pad of ontbreekt | Maak aan (zie stap 2) |
+| Template niet gevonden | DSC repo niet gecloned of ander pad | Stap 1 opnieuw uitvoeren |
+| `gh: command not found` | gh CLI niet geïnstalleerd | Installeer via `winget install GitHub.cli` |
 
 ---
 
-## Technische details (voor de skill zelf)
+## Technische details
 
 - Auth: MSAL device code flow, client ID `1950a258-227b-4e31-a9cf-717495945fc2` (Azure PowerShell public client)
-- Scopes: User.Read.All, AuditLog.Read.All, Group.Read.All, Device.Read.All, Directory.Read.All, Policy.Read.All, RoleManagement.Read.Directory
-- Lege groepen: `/groups/{id}/members/$count` per groep (~1 req/groep, traag bij 1000+)
-- JSON encoding: UTF-8 zonder BOM — python leest met `encoding='utf-8'`
-- Document versie-bump: automatisch (bijv. v0.1 → v0.2 of v0.4 → v0.5)
-- sectPr fix: aanwezig in Add-EntraHoofdstuk.py, regel direct na `Document(dest)`
-- Template: `C:\Drop\DSC\Scripts\HealthScan\template-health-scan.docx` (gegenereerd via create_template.py)
-- Placeholders in template: `[KLANT_NAAM]`, `[KLANT_CODE]`, `[KLANT_ADRES]`, `[KLANT_POSTCODE_STAD]`, `[KLANT_CONTACT_1/2/3]`, `[DATUM]`
+- Scopes: `User.Read.All`, `AuditLog.Read.All`, `Group.Read.All`, `Device.Read.All`, `Directory.Read.All`, `Policy.Read.All`, `RoleManagement.Read.Directory`
+- Lege groepen tellen: 1 API call per groep — traag bij 1000+ groepen (~5 min), normaal gedrag
+- Template placeholders: `[KLANT_NAAM]`, `[KLANT_CODE]`, `[KLANT_ADRES]`, `[KLANT_POSTCODE_STAD]`, `[KLANT_CONTACT_1/2/3]`, `[DATUM]`
+- Document versie-bump: automatisch (`v0.1 → v0.2`, `v0.4 → v0.5`, etc.)
+- JSON output: `[KlantDir]\Health Scan\[KlantCode]-EntraStats.json`
 
 ---
 
 ## Voorbeeldgesprekken
 
 **"Entra stats voor RGV toevoegen aan health scan"**
-→ PIM-instructie geven → klant-config.json lezen → stats ophalen → document bijwerken → output melden
+→ Setup check → RGV config lezen → bestaand rapport gevonden → PIM instrueren → stats ophalen → H4 toevoegen → bevindingen melden
 
 **"Nieuw health scan rapport aanmaken voor Gemeente Huizen"**
-→ Vragen om adres + contacten → init_health_scan.py draaien → PIM activeren → stats ophalen → H4 toevoegen
-
-**"Doe hetzelfde voor Gemeente Huizen"**
-→ HZN klantmap gebruiken → zelfde flow
+→ Setup check → HZN config lezen → geen rapport gevonden → adres/contacten vragen → rapport aanmaken → PIM instrueren → stats ophalen → H4 toevoegen
 
 **"Kan je chapter 4 opnieuw genereren met de bestaande JSON?"**
-→ Stap 4 overslaan, direct naar stap 5 met de bestaande JSON
+→ Setup check → stap 5-6 overslaan → direct H4 toevoegen met bestaande JSON
 
 **"Maak een rapport aan maar stats komen later"**
-→ Alleen stap 0A uitvoeren (init_health_scan.py), stappen 1-6 overslaan
+→ Setup check → rapport aanmaken → stoppen na stap 4
