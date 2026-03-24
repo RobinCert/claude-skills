@@ -31,8 +31,57 @@ Geen PowerShell. Geen handmatig kopiëren. Één commando, één browser-tap.
 | Gemeente Huizen | HZN | bc49eac0-d8da-4ed9-b328-91c793d8b02e | C:\Drop\DSC\Klanten\HZN - Gemeente Huizen |
 | Regio Gooi en Vechtstreek | RGV | 3d4f9081-0beb-452f-a8cf-7203e3681edc | C:\Drop\DSC\Klanten\RGV - Regio Gooi en Vechtstreek |
 
-Scripts: `C:\Drop\DSC\Scripts\HealthScan\`
+Scripts: `[DSC_REPO]\Scripts\HealthScan\` (zie Setup hieronder)
 Runbook:  Obsidian → DSC/Runbooks/Entra-Stats-Health-Scan.md
+
+---
+
+## Setup (eenmalig per machine)
+
+### 1 — DSC repo clonen
+
+Clone `RobinCert/DSC` naar een lokale map. Aanbevolen pad (zodat klantmappen ook kloppen):
+
+```bash
+gh repo clone RobinCert/DSC "C:\Drop\DSC\Scripts"
+```
+
+> Gebruik je een ander pad? Pas dan de scriptpaden in de commando's hieronder aan.
+
+### 2 — Python dependencies installeren
+
+```bash
+pip install msal requests python-docx
+```
+
+### 3 — claude-skills repo configureren
+
+Clone `RobinCert/claude-skills` en voeg het pad toe aan je globale `CLAUDE.md`
+(`C:\Users\[Naam]\.claude\CLAUDE.md` of de CLAUDE.md in je werkmap):
+
+```bash
+gh repo clone RobinCert/claude-skills "C:\Users\[Naam]\claude-skills"
+```
+
+Voeg toe aan CLAUDE.md:
+```
+Skills directory: C:\Users\[Naam]\claude-skills\
+```
+
+### 4 — Klantmap inrichten
+
+Elke klant heeft een map nodig met `klant-config.json`. Minimale inhoud:
+
+```json
+{
+  "klant": {
+    "naam": "Naam van de klant",
+    "code": "ABC",
+    "tenantId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "outputDir": "C:\\Drop\\DSC\\Klanten\\ABC - Naam"
+  }
+}
+```
 
 ---
 
